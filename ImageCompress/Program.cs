@@ -8,13 +8,10 @@ var rootCommand = CreateRootCommandWithOptions();
 
 // Note that the parameters of the handler method are matched according to the names of the options
 
-rootCommand.Handler = CommandHandler.Create<string, string, bool, int, int>((input, output, convert, quality, limit) =>
+rootCommand.Handler = CommandHandler.Create<CompressParameter>(param =>
  {
-     System.Console.WriteLine($"{nameof(input)} : {input}");
-     System.Console.WriteLine($"{nameof(output)} : {output}");
-     System.Console.WriteLine($"{nameof(convert)} : {convert}");
-     System.Console.WriteLine($"{nameof(quality)} : {quality}");
-     System.Console.WriteLine($"{nameof(limit)} : {limit}");
+    var imageCompress = new ImageCompress();
+    imageCompress.Compress(param);
  });
 
 // Parse the incoming args and invoke the handler
@@ -48,7 +45,8 @@ static RootCommand CreateRootCommandWithOptions()
                  {
                      var inputSymbolResultSet = result.Parent?.Children[0];
                      var inputOptionResult = inputSymbolResultSet?.FindResultFor(inputOption);
-                     return inputOptionResult?.GetValueOrDefault()?.ToString();
+                     var input = inputOptionResult?.GetValueOrDefault()?.ToString();
+                     return Directory.Exists(input)?input:Path.GetDirectoryName(input);
                  }
                  return value;
              },
