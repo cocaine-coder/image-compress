@@ -17,13 +17,16 @@ public class ImageCompress : IImageCompress
 
     public void Compress(CompressParameter param)
     {
-        InitImagePaths(param.Input, param.Limit);
+        InitImagePaths(param.Input, param.Limit, param.Recurse);
 
         foreach (var filePath in pathMapImageType[ImageFormat.Jpeg])
         {
-            using var image = Image.FromFile(filePath);
+            using var stream = new MemoryStream(File.ReadAllBytes(filePath));
+            using var image = Image.FromStream(stream);
+
+            var output = string.IsNullOrWhiteSpace(param.Output) ? Path.GetDirectoryName(filePath) : param.Output;
             var destPath = GetDestPath(
-                param.Output,
+                output,
                 Path.GetFileNameWithoutExtension(filePath),
                 Path.GetExtension(filePath),
                 param.Convert);
@@ -42,20 +45,23 @@ public class ImageCompress : IImageCompress
 
         foreach (var filePath in pathMapImageType[ImageFormat.Png])
         {
-            using var bitmap = new Bitmap(filePath);
+            using var stream = new MemoryStream(File.ReadAllBytes(filePath));
+            using var bitmap = new Bitmap(stream);
             var quantizer = new nQuant.WuQuantizer();
             using var quantized = quantizer.QuantizeImage(bitmap, 10, 70);
+
+            var output = string.IsNullOrWhiteSpace(param.Output) ? Path.GetDirectoryName(filePath) : param.Output;
             var destPath = GetDestPath(
-                param.Output,
+                output,
                 Path.GetFileNameWithoutExtension(filePath),
                 Path.GetExtension(filePath),
                 param.Convert);
 
-            quantized.Save(destPath,ImageFormat.Png);
+            quantized.Save(destPath, ImageFormat.Png);
         }
     }
 
-    private void InitImagePaths(string inputPath, int limit)
+    private void InitImagePaths(string inputPath, int limit, bool recurse)
     {
         var files = new List<string>();
         if (File.Exists(inputPath))
@@ -70,6 +76,15 @@ public class ImageCompress : IImageCompress
         }
 
         var directoryInfo = new DirectoryInfo(inputPath);
+
+        if (recurse)
+        {
+            foreach (var dirInfo in directoryInfo.GetDirectories())
+            {
+                InitImagePaths(dirInfo.FullName, limit, recurse);
+            }
+        }
+
         foreach (var fileInfo in directoryInfo.GetFiles())
         {
             var format = ValidateAndGetImageType(fileInfo, limit);
@@ -82,7 +97,7 @@ public class ImageCompress : IImageCompress
 
     private ImageFormat? ValidateAndGetImageType(FileInfo fileInfo, int limit)
     {
-        if (fileInfo.Length < limit) return null;
+        if (fileInfo.Length < limit * 1024) return null;
 
         var tempPath = fileInfo.FullName.ToLower();
         if (tempPath.EndsWith(".jpg") || tempPath.EndsWith(".jpeg"))
@@ -108,7 +123,7 @@ public class ImageCompress : IImageCompress
 
         var files = Directory.GetFiles(output);
         int count = 0;
-        if (files.Contains(filePath))
+        while (files.Contains(filePath))
         {
             count += 1;
             filePath = Path.Combine(output, $"{filename}({count}){extension}");

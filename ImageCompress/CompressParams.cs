@@ -10,12 +10,20 @@ public class CompressParameter
 
     public int Limit { get; set; }
 
+    public bool Recurse { get; set; }
+
     public override string ToString()
     {
-        return $"{nameof(Input)} : {Input}\n" +
-               $"{nameof(Output)} : {Output}\n" +
-               $"{nameof(Convert)} : {Convert}\n" +
-               $"{nameof(Quality)} : {Quality}\n" +
-               $"{nameof(Limit)} : {Limit}\n";
+        var ret = "";
+
+        foreach(var field in this.GetType().GetFields(bindingAttr:System.Reflection.BindingFlags.Public))
+        {
+            var name = field.Name;
+            var value = field.GetValue(this);
+
+            ret += $"{name} : {value}\n";
+        }
+        
+        return ret;
     }
 }

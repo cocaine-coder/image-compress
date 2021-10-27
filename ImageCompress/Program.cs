@@ -1,5 +1,4 @@
 ﻿// See https://aka.ms/new-console-template for more information
-
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
@@ -10,8 +9,8 @@ var rootCommand = CreateRootCommandWithOptions();
 
 rootCommand.Handler = CommandHandler.Create<CompressParameter>(param =>
  {
-    var imageCompress = new ImageCompress();
-    imageCompress.Compress(param);
+     var imageCompress = new ImageCompress();
+     imageCompress.Compress(param);
  });
 
 // Parse the incoming args and invoke the handler
@@ -38,30 +37,29 @@ static RootCommand CreateRootCommandWithOptions()
 
     var outputOption = new Option<string?>(
             aliases: new[] { "--output", "-o" },
-            parseArgument: result =>
-             {
-                 var value = result.ToString().Substring(22).Trim(new[] { ' ', '<', '>' });
-                 if (string.IsNullOrEmpty(value))
-                 {
-                     var inputSymbolResultSet = result.Parent?.Children[0];
-                     var inputOptionResult = inputSymbolResultSet?.FindResultFor(inputOption);
-                     var input = inputOptionResult?.GetValueOrDefault()?.ToString();
-                     return Directory.Exists(input)?input:Path.GetDirectoryName(input);
-                 }
-                 return value;
-             },
-            isDefault: true,
+            // parseArgument: result =>
+            //  {
+            //      var value = result.ToString().Substring(22).Trim(new[] { ' ', '<', '>' });
+            //      if (string.IsNullOrEmpty(value))
+            //      {
+            //          var inputSymbolResultSet = result.Parent?.Children[0];
+            //          var inputOptionResult = inputSymbolResultSet?.FindResultFor(inputOption);
+            //          var input = inputOptionResult?.GetValueOrDefault()?.ToString();
+            //          return Directory.Exists(input)?input:Path.GetDirectoryName(input);
+            //      }
+            //      return value;`
+            //  },
             description: "output path. [default: directory of input]");
 
-    outputOption.AddValidator(result =>
-    {
-        var value = result.GetValueOrDefault<string>("");
-        if (!string.IsNullOrWhiteSpace(value) && !Directory.Exists(value))
-        {
-            return $"{value} not exists";
-        }
-        return null;
-    });
+    // outputOption.AddValidator(result =>
+    // {
+    //     var value = result.GetValueOrDefault<string>("");
+    //     if (!string.IsNullOrWhiteSpace(value) && !Directory.Exists(value))
+    //     {
+    //         return $"{value} not exists";
+    //     }
+    //     return null;
+    // });
 
     var qualityOption = new Option<int>(
         aliases: new[] { "--quality", "-q" },
@@ -104,7 +102,12 @@ static RootCommand CreateRootCommandWithOptions()
             description: "whether to convert origin file"
         ),
         qualityOption,
-        limitOption
+        limitOption,
+        new Option<bool>(
+            aliases:new[]{"--recurse","-r"},
+            getDefaultValue:()=>false,
+            description: "whether recurse directory"
+        )
     };
 }
 
